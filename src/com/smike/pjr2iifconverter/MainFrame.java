@@ -47,6 +47,19 @@ public class MainFrame extends JFrame {
     }
   };
 
+  private static final FileFilter PJR_FILE_FILTER = new FileFilter() {
+    @Override
+    public String getDescription() {
+      return "PJR Files";
+    }
+
+    @Override
+    public boolean accept(File file) {
+      return file.isDirectory() ||
+          PJR_FILENAME_FILTER.accept(file.getParentFile(), file.getName());
+    }
+  };
+
   private Properties properties;
 
   private File accountIdMapFile;
@@ -244,57 +257,47 @@ public class MainFrame extends JFrame {
   }
 
   private void onChoosePjrFilesAction() {
-    File startDir = null;
-    if (!pjrFiles.isEmpty()) {
-      startDir = pjrFiles.get(0).getParentFile();
-    }
-    JFileChooser jFileChooser = new JFileChooser(startDir);
-    jFileChooser.setMultiSelectionEnabled(true);
-    jFileChooser.setFileFilter(new FileFilter() {
-      @Override
-      public String getDescription() {
-        return "PJR Files";
-      }
-
-      @Override
-      public boolean accept(File file) {
-        return file.isDirectory() ||
-            PJR_FILENAME_FILTER.accept(file.getParentFile(), file.getName());
-      }
-    });
-    int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
-    if (returnValue == JFileChooser.APPROVE_OPTION) {
-      File[] files = jFileChooser.getSelectedFiles();
+    File currentFile = pjrFiles.isEmpty() ? null : pjrFiles.get(0);
+    File[] files = chooseFiles(currentFile, PJR_FILE_FILTER, false, true);
+    if (files != null) {
       setPjrFiles(files);
     }
   }
 
   private void onChooseAccountIdMapFileAction() {
-    File startDir = null;
-    if (accountIdMapFile != null) {
-      startDir = accountIdMapFile.getParentFile();
-    }
-    JFileChooser jFileChooser = new JFileChooser(startDir);
-    jFileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-    int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
-    if (returnValue == JFileChooser.APPROVE_OPTION) {
-      File file = jFileChooser.getSelectedFile();
+    File file =
+        chooseFile(accountIdMapFile, new FileNameExtensionFilter("CSV Files", "csv"), false);
+    if (file != null) {
       setAccountIdMapFile(file);
     }
   }
 
   private void onChooseIifFileAction() {
-    File startDir = null;
-    if (iifFile != null) {
-      startDir = iifFile.getParentFile();
-    }
-    JFileChooser jFileChooser = new JFileChooser(startDir);
-    jFileChooser.setFileFilter(new FileNameExtensionFilter("IIF Files", "iif"));
-    int returnValue = jFileChooser.showSaveDialog(MainFrame.this);
-    if (returnValue == JFileChooser.APPROVE_OPTION) {
-      File file = jFileChooser.getSelectedFile();
+    File file = chooseFile(iifFile, new FileNameExtensionFilter("IIF Files", "iif"), true);
+    if (file != null) {
       setIifFile(file);
     }
+  }
+
+  private File chooseFile(File currentSelection, FileFilter fileFilter, boolean saveDialog) {
+    File[] files = chooseFiles(currentSelection, fileFilter, saveDialog, false);
+    return files == null ? null : files[0];
+  }
+  private File[] chooseFiles(File currentSelection, FileFilter fileFilter, boolean saveDialog,
+      boolean multiSelect) {
+    File startDir = currentSelection == null ? null : currentSelection.getParentFile();
+    JFileChooser jFileChooser = new JFileChooser(startDir);
+    jFileChooser.setMultiSelectionEnabled(multiSelect);
+    jFileChooser.setFileFilter(fileFilter);
+
+    int returnValue =
+        saveDialog ? jFileChooser.showSaveDialog(this) : jFileChooser.showOpenDialog(this);
+
+    if (returnValue == JFileChooser.APPROVE_OPTION) {
+      return multiSelect ? jFileChooser.getSelectedFiles() :
+                           new File[] { jFileChooser.getSelectedFile() };
+    }
+    return null;
   }
 
   private void setAccountIdMapFile(File accountIdMapFile) {
