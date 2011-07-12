@@ -28,35 +28,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
-enum SettingsKey {
-  DELETE_PJRS_ON_CONVERT("delete_pjrs_on_convert"),
-  IIF_OUTPUT_FILE("iif_output_file"),
-  ACCOUNT_ID_MAP_FILE("account_id_map_file"),
-  PJR_LOCATION("pjr_location");
-
-  private String key;
-  private SettingsKey(String key) {
-    this.key = key;
-  }
-
-  public String getKey() { return key; }
-  public String toString() { return getKey(); }
-
-  public static SettingsKey getEnum(String key) {
-    for (SettingsKey settingsKey : SettingsKey.values()) {
-      if (settingsKey.getKey().equals(key)) {
-        return settingsKey;
-      }
-    }
-    return null;
-  }
-}
 
 public class MainFrame extends JFrame {
   private static Logger logger = Logger.getLogger(MainFrame.class.getName());
@@ -97,17 +74,7 @@ public class MainFrame extends JFrame {
       accountIdMapButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
-          File startDir = null;
-          if (accountIdMapFile != null) {
-            startDir = accountIdMapFile.getParentFile();
-          }
-          JFileChooser jFileChooser = new JFileChooser(startDir);
-          jFileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
-          int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
-          if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File file = jFileChooser.getSelectedFile();
-            setAccountIdMapFile(file);
-          }
+          onChooseAccountIdMapFileAction();
         }
       });
       JPanel accountIdMapPanel = new JPanel(new GridBagLayout()); {
@@ -125,17 +92,7 @@ public class MainFrame extends JFrame {
       iifButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
-          File startDir = null;
-          if (iifFile != null) {
-            startDir = iifFile.getParentFile();
-          }
-          JFileChooser jFileChooser = new JFileChooser(startDir);
-          jFileChooser.setFileFilter(new FileNameExtensionFilter("IIF Files", "iif"));
-          int returnValue = jFileChooser.showSaveDialog(MainFrame.this);
-          if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File file = jFileChooser.getSelectedFile();
-            setIifFile(file);
-          }
+          onChooseIifFileAction();
         }
       });
       JPanel iifPanel = new JPanel(new GridBagLayout()); {
@@ -153,29 +110,7 @@ public class MainFrame extends JFrame {
       pjrButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent arg0) {
-          File startDir = null;
-          if (!pjrFiles.isEmpty()) {
-            startDir = pjrFiles.get(0).getParentFile();
-          }
-          JFileChooser jFileChooser = new JFileChooser(startDir);
-          jFileChooser.setMultiSelectionEnabled(true);
-          jFileChooser.setFileFilter(new FileFilter() {
-            @Override
-            public String getDescription() {
-              return "PJR Files";
-            }
-
-            @Override
-            public boolean accept(File file) {
-              return file.isDirectory() ||
-                  PJR_FILENAME_FILTER.accept(file.getParentFile(), file.getName());
-            }
-          });
-          int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
-          if (returnValue == JFileChooser.APPROVE_OPTION) {
-            File[] files = jFileChooser.getSelectedFiles();
-            setPjrFiles(files);
-          }
+          onChoosePjrFilesAction();
         }
       });
 
@@ -203,29 +138,7 @@ public class MainFrame extends JFrame {
         convertButton.addActionListener(new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent arg0) {
-            try {
-              Pjr2IifConverter pjr2IifConverter =
-                  new Pjr2IifConverter(getPjrFiles(), getAccountIdMapFile());
-              String output = pjr2IifConverter.convert();
-              logger.fine("IIF:\n" + output);
-
-              FileWriter fileWriter = new FileWriter(getIifFile());
-              fileWriter.write(output);
-              fileWriter.flush();
-              fileWriter.close();
-
-              logger.info("Converted PJRs to " + getIifFile());
-
-              if (isDeletePjrFiles()) {
-                logger.info("Deleting converted PJR files.");
-                for (File pjrFile : pjrFiles) {
-                  pjrFile.delete();
-                }
-              }
-            } catch (Exception e) {
-              e.printStackTrace();
-              System.exit(1);
-            }
+            onConvertAction();
           }
         });
 
@@ -281,6 +194,106 @@ public class MainFrame extends JFrame {
         properties.getProperty(SettingsKey.DELETE_PJRS_ON_CONVERT.getKey());
     if (deletePjrFilesString != null) {
       setDeletePjrFiles(Boolean.parseBoolean(deletePjrFilesString));
+    }
+  }
+
+  private void onConvertAction() {
+    try {
+      File iifFile = getIifFile();
+      if (iifFile.exists()) {
+        String[] buttonTitles = { "Yes, overwrite the file", "No, cancel conversion" };
+        int response = JOptionPane.showOptionDialog(
+            this,
+            "The output file, " + iifFile.getName() +
+                ", already exists. Do you want to overwrite it?",
+            "Existing output file",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            buttonTitles,
+            buttonTitles[1]);
+
+        if (response == 1) {
+          // 1 is the index of the "no" option. Cancel conversion.
+          return;
+        }
+      }
+
+      Pjr2IifConverter pjr2IifConverter =
+          new Pjr2IifConverter(getPjrFiles(), getAccountIdMapFile());
+      String output = pjr2IifConverter.convert();
+      logger.fine("IIF:\n" + output);
+
+      FileWriter fileWriter = new FileWriter(getIifFile());
+      fileWriter.write(output);
+      fileWriter.flush();
+      fileWriter.close();
+
+      logger.info("Converted PJRs to " + getIifFile());
+
+      if (isDeletePjrFiles()) {
+        logger.info("Deleting converted PJR files.");
+        for (File pjrFile : pjrFiles) {
+          pjrFile.delete();
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
+
+  private void onChoosePjrFilesAction() {
+    File startDir = null;
+    if (!pjrFiles.isEmpty()) {
+      startDir = pjrFiles.get(0).getParentFile();
+    }
+    JFileChooser jFileChooser = new JFileChooser(startDir);
+    jFileChooser.setMultiSelectionEnabled(true);
+    jFileChooser.setFileFilter(new FileFilter() {
+      @Override
+      public String getDescription() {
+        return "PJR Files";
+      }
+
+      @Override
+      public boolean accept(File file) {
+        return file.isDirectory() ||
+            PJR_FILENAME_FILTER.accept(file.getParentFile(), file.getName());
+      }
+    });
+    int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
+    if (returnValue == JFileChooser.APPROVE_OPTION) {
+      File[] files = jFileChooser.getSelectedFiles();
+      setPjrFiles(files);
+    }
+  }
+
+  private void onChooseAccountIdMapFileAction() {
+    File startDir = null;
+    if (accountIdMapFile != null) {
+      startDir = accountIdMapFile.getParentFile();
+    }
+    JFileChooser jFileChooser = new JFileChooser(startDir);
+    jFileChooser.setFileFilter(new FileNameExtensionFilter("CSV Files", "csv"));
+    int returnValue = jFileChooser.showOpenDialog(MainFrame.this);
+    if (returnValue == JFileChooser.APPROVE_OPTION) {
+      File file = jFileChooser.getSelectedFile();
+      setAccountIdMapFile(file);
+    }
+  }
+
+  private void onChooseIifFileAction() {
+    File startDir = null;
+    if (iifFile != null) {
+      startDir = iifFile.getParentFile();
+    }
+    JFileChooser jFileChooser = new JFileChooser(startDir);
+    jFileChooser.setFileFilter(new FileNameExtensionFilter("IIF Files", "iif"));
+    int returnValue = jFileChooser.showSaveDialog(MainFrame.this);
+    if (returnValue == JFileChooser.APPROVE_OPTION) {
+      File file = jFileChooser.getSelectedFile();
+      setIifFile(file);
     }
   }
 

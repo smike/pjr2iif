@@ -27,7 +27,7 @@ public class Pjr2IifConverter {
   private static final String TENDER_CODE_TAG = "TenderCode";
   private static final String RECEIPT_DATE_TAG = "ReceiptDate";
   private static final String TRANSACTION_ID_TAG = "TransactionID";
-  private static final String TRANSACTION_TOTAL_GROSS_AMOUNT_TAG = "TransactionTotalGrossAmount";
+  private static final String TRANSACTION_TOTAL_NET_AMOUNT_TAG = "TransactionTotalNetAmount";
   private static final String ACCOUNT_ID_TAG = "AccountID";
 
   private static final String HOUSE_CHARGES = "houseCharges";
@@ -57,7 +57,6 @@ public class Pjr2IifConverter {
     documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
     parseAccountIdMap(accountIdMapFile);
-
 
     Formatter formatter = new Formatter();
     formatter.format(IIF_HEADER);
@@ -90,7 +89,8 @@ public class Pjr2IifConverter {
 
     String receiptDateString = getFirstValueByTagName(RECEIPT_DATE_TAG, document);
     String transactionId = getFirstValueByTagName(TRANSACTION_ID_TAG, document);
-    String transactionTotalGrossAmount = getFirstValueByTagName(TRANSACTION_TOTAL_GROSS_AMOUNT_TAG, document);
+    String transactionTotalNetAmount =
+        getFirstValueByTagName(TRANSACTION_TOTAL_NET_AMOUNT_TAG, document);
     String accountId = getFirstValueByTagName(ACCOUNT_ID_TAG, document);
 
     // Parse the date. It should be in YYYY-MM-DD format.
@@ -103,10 +103,10 @@ public class Pjr2IifConverter {
     int date = Integer.parseInt(dateParts[2]);
     Calendar calendar = Calendar.getInstance();
     // Date and month are 0-based
-    calendar.set(year, month-1, date-1);
+    calendar.set(year, month-1, date);
     Date receiptDate = calendar.getTime();
 
-    float amount = Float.parseFloat(transactionTotalGrossAmount);
+    float amount = Float.parseFloat(transactionTotalNetAmount);
 
     // We only care about the part of the id before the first "-".
     accountId = accountId.substring(0, accountId.indexOf("-")).trim();
