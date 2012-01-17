@@ -35,6 +35,7 @@ import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+@SuppressWarnings("serial")
 public class MainFrame extends JFrame {
   private static Logger logger = Logger.getLogger(MainFrame.class.getName());
 
@@ -70,6 +71,7 @@ public class MainFrame extends JFrame {
   private JTextField iifFileTextField;
   private JList pjrFilesList;
   private JCheckBox deletePjrFilesCheckBox;
+  private JCheckBox ignoreNegativeTransactionsCheckBox;
 
   public MainFrame() {
     super("PJR to IIF Converter");
@@ -128,6 +130,7 @@ public class MainFrame extends JFrame {
       });
 
       deletePjrFilesCheckBox = new JCheckBox("Delete PJR files after conversion");
+      ignoreNegativeTransactionsCheckBox = new JCheckBox("Ignore negative transactions");
 
       JPanel pjrPanel = new JPanel(new GridBagLayout()); {
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
@@ -141,6 +144,7 @@ public class MainFrame extends JFrame {
         JPanel controlPanel = new JPanel(); {
           controlPanel.add(pjrButton);
           controlPanel.add(deletePjrFilesCheckBox);
+          controlPanel.add(ignoreNegativeTransactionsCheckBox);
         }
         pjrPanel.add(controlPanel, gridBagConstraints);
       }
@@ -208,6 +212,12 @@ public class MainFrame extends JFrame {
     if (deletePjrFilesString != null) {
       setDeletePjrFiles(Boolean.parseBoolean(deletePjrFilesString));
     }
+
+    String ignoreNegativeTransactionsString =
+        properties.getProperty(SettingsKey.IGNORE_NEGATIVE_TRANSACTIONS.getKey());
+    if (ignoreNegativeTransactionsString != null) {
+      setIgnoreNegativeTransactions(Boolean.parseBoolean(ignoreNegativeTransactionsString));
+    }
   }
 
   private void onConvertAction() {
@@ -234,7 +244,7 @@ public class MainFrame extends JFrame {
 
       Pjr2IifConverter pjr2IifConverter =
           new Pjr2IifConverter(getPjrFiles(), getAccountIdMapFile());
-      String output = pjr2IifConverter.convert();
+      String output = pjr2IifConverter.convert(isIgnoreNegativeTransactions());
       logger.fine("IIF:\n" + output);
 
       FileWriter fileWriter = new FileWriter(getIifFile());
@@ -330,6 +340,14 @@ public class MainFrame extends JFrame {
     deletePjrFilesCheckBox.setSelected(deletePjrFiles);
   }
 
+  public void setIgnoreNegativeTransactions(boolean ignoreNegativeTransactions) {
+    ignoreNegativeTransactionsCheckBox.setSelected(ignoreNegativeTransactions);
+  }
+
+  public boolean isIgnoreNegativeTransactions() {
+    return ignoreNegativeTransactionsCheckBox.isSelected();
+  }
+
   public void setPjrFiles(File[] pjrFiles) {
     this.pjrFiles.clear();
     DefaultListModel listModel = new DefaultListModel();
@@ -378,6 +396,9 @@ public class MainFrame extends JFrame {
 
     properties.setProperty(SettingsKey.DELETE_PJRS_ON_CONVERT.getKey(),
                            Boolean.toString(isDeletePjrFiles()));
+
+    properties.setProperty(SettingsKey.IGNORE_NEGATIVE_TRANSACTIONS.getKey(),
+                           Boolean.toString(isIgnoreNegativeTransactions()));
 
     File configFile = new File(CONFIG_LOCATION);
     try {

@@ -53,7 +53,7 @@ public class Pjr2IifConverter {
     this.accountIdMapFile = accountIdMapFile;
   }
 
-  public String convert() throws ParserConfigurationException, IOException, SAXException, ParseException {
+  public String convert(boolean ignoreNegativeTransactions) throws ParserConfigurationException, IOException, SAXException, ParseException {
     documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
     parseAccountIdMap(accountIdMapFile);
@@ -64,7 +64,8 @@ public class Pjr2IifConverter {
       TransactionData transactionData = parsePjrFile(xmlFile);
 
       // If the transaction is invalid, skip it over.
-      if (transactionData == null) {
+      if (transactionData == null ||
+          (ignoreNegativeTransactions && transactionData.getAmount() < 0)) {
         continue;
       }
 
@@ -164,7 +165,7 @@ public class Pjr2IifConverter {
       }
 
       Pjr2IifConverter xmlConverter = new Pjr2IifConverter(xmlFiles, new File(accountIdMapFile));
-      System.out.println(xmlConverter.convert());
+      System.out.println(xmlConverter.convert(false));
     } catch (Exception e) {
       e.printStackTrace();
     }
