@@ -24,13 +24,10 @@ import org.xml.sax.SAXException;
 import au.com.bytecode.opencsv.CSVReader;
 
 public class Pjr2IifConverter {
-  private static final String TENDER_CODE_TAG = "TenderCode";
   private static final String RECEIPT_DATE_TAG = "ReceiptDate";
   private static final String TRANSACTION_ID_TAG = "TransactionID";
   private static final String TRANSACTION_TOTAL_NET_AMOUNT_TAG = "TransactionTotalNetAmount";
   private static final String ACCOUNT_ID_TAG = "AccountID";
-
-  private static final String HOUSE_CHARGES = "houseCharges";
 
   private static final String IIF_HEADER =
       "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tDOCNUM\tACCNT\tNAME\tAMOUNT\tPAID\n" +
@@ -83,16 +80,15 @@ public class Pjr2IifConverter {
   private TransactionData parsePjrFile(File file) throws SAXException, IOException, ParseException {
     Document document = documentBuilder.parse(file);
 
-    String tenderCode = getFirstValueByTagName(TENDER_CODE_TAG, document);
-    if (!HOUSE_CHARGES.equals(tenderCode)) {
-      return null;
-    }
-
     String receiptDateString = getFirstValueByTagName(RECEIPT_DATE_TAG, document);
     String transactionId = getFirstValueByTagName(TRANSACTION_ID_TAG, document);
     String transactionTotalNetAmount =
         getFirstValueByTagName(TRANSACTION_TOTAL_NET_AMOUNT_TAG, document);
     String accountId = getFirstValueByTagName(ACCOUNT_ID_TAG, document);
+    if (accountId == null || accountId.length() > 0) {
+      // We only care about transactions with account ids.
+      return null;
+    }
 
     // Parse the date. It should be in YYYY-MM-DD format.
     String[] dateParts = receiptDateString.split("-");
