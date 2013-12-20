@@ -59,6 +59,7 @@ public class Pjr2IifConverter {
     formatter.format(IIF_HEADER);
     for (File xmlFile : xmlFiles) {
       TransactionData transactionData = parsePjrFile(xmlFile);
+      System.out.println(xmlFile + ": " + transactionData);
 
       // If the transaction is invalid, skip it over.
       if (transactionData == null ||
@@ -73,20 +74,23 @@ public class Pjr2IifConverter {
                        transactionData.getAmount());
       transactions.add(transactionData);
     }
-
-    return formatter.toString();
+    
+    String output = formatter.toString();
+    formatter.close();
+    return output;
   }
 
   private TransactionData parsePjrFile(File file) throws SAXException, IOException, ParseException {
     Document document = documentBuilder.parse(file);
+    System.out.println("Parsing " + file);
 
     String receiptDateString = getFirstValueByTagName(RECEIPT_DATE_TAG, document);
     String transactionId = getFirstValueByTagName(TRANSACTION_ID_TAG, document);
     String transactionTotalNetAmount =
         getFirstValueByTagName(TRANSACTION_TOTAL_NET_AMOUNT_TAG, document);
     String accountId = getFirstValueByTagName(ACCOUNT_ID_TAG, document);
-    if (accountId == null || accountId.length() > 0) {
-      // We only care about transactions with account ids.
+    if (accountId == null || accountId.isEmpty()) {
+      // We only care about transactions with account ids and transaction amounts.
       return null;
     }
 
@@ -116,6 +120,7 @@ public class Pjr2IifConverter {
     FileReader fileReader = new FileReader(file);
     CSVReader csvReader = new CSVReader(fileReader);
     List<String[]> rows = csvReader.readAll();
+    csvReader.close();
     for (String[] columns : rows) {
       if (columns.length != 2) {
         throw new RuntimeException("Unable to parse account ID map file because a line was in an unexpected format: " + columns);
@@ -128,6 +133,8 @@ public class Pjr2IifConverter {
         accountIdMap.put(customerId.trim(), customerName);
       }
     }
+    
+    System.out.println(accountIdMap);
   }
 
   private String getFirstValueByTagName(String tagName, Document document) {
@@ -146,7 +153,7 @@ public class Pjr2IifConverter {
    */
   public static void main(String[] args) {
     try {
-      String xmlFile = "/Users/smike/Downloads/Passport"; //PJR3401106140611321090.xml";
+      String xmlFile = "/Users/smike/Downloads/PJR"; //PJR3401106140611321090.xml";
       String accountIdMapFile = "/Users/smike/Downloads/accid.csv";
 
       File pjrFile = new File(xmlFile);
