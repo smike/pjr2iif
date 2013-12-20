@@ -89,7 +89,8 @@ public class Pjr2IifConverter {
     String transactionTotalNetAmount =
         getFirstValueByTagName(TRANSACTION_TOTAL_NET_AMOUNT_TAG, document);
     String accountId = getFirstValueByTagName(ACCOUNT_ID_TAG, document);
-    if (accountId == null || accountId.isEmpty()) {
+    if (accountId == null || accountId.isEmpty() ||
+    		transactionTotalNetAmount == null) {
       // We only care about transactions with account ids and transaction amounts.
       return null;
     }
