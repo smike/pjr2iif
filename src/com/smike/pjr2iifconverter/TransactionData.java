@@ -30,4 +30,12 @@ public class TransactionData {
   public String getAccount() {
     return account;
   }
+  
+  public String toString() {
+	return "{receiptDate: " + this.getReceiptDate() +
+			", transactionId: " + this.getTransactionId() +
+			", amount: " + this.getAmount() +
+			", account: " + this.getAccount() +
+			"}";
+  }
 }
