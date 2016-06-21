@@ -24,6 +24,8 @@ import org.xml.sax.SAXException;
 import au.com.bytecode.opencsv.CSVReader;
 
 public class Pjr2IifConverter {
+  private static Logger logger = Logger.getLogger(Pjr2IifConverter.class.getName());
+
   private static final String RECEIPT_DATE_TAG = "ReceiptDate";
   private static final String TRANSACTION_ID_TAG = "TransactionID";
   private static final String TRANSACTION_TOTAL_NET_AMOUNT_TAG = "TransactionTotalNetAmount";
@@ -80,6 +82,22 @@ public class Pjr2IifConverter {
     return output;
   }
 
+  private boolean getAccountName(String accountId) {
+    if (accountId == null || accountId.isEmpty()) {
+      return null;
+    }
+
+    // We only care about the part of the id before the first "-".
+    int indexOfDash = accountId.indexOf("-");
+    if (indexOfDash == -1) {
+      return null;
+    }
+    accountId = accountId.substring(0, indexOfDash).trim();
+
+    // If we don't know about this accountId it won't be in the map and we can ignore it.
+    return accountIdMap.get(accountId);
+  }
+
   private TransactionData parsePjrFile(File file) throws SAXException, IOException, ParseException {
     Document document = documentBuilder.parse(file);
     System.out.println("Parsing " + file);
@@ -89,9 +107,12 @@ public class Pjr2IifConverter {
     String transactionTotalNetAmount =
         getFirstValueByTagName(TRANSACTION_TOTAL_NET_AMOUNT_TAG, document);
     String accountId = getFirstValueByTagName(ACCOUNT_ID_TAG, document);
-    if (accountId == null || accountId.isEmpty() ||
-    		transactionTotalNetAmount == null) {
-      // We only care about transactions with account ids and transaction amounts.
+
+    String accountName = this.getAccountName(accountId);
+    if (accountName == null || transactionTotalNetAmount == null) {
+      // We only care about transactions with known accounts and transaction amounts.
+      logger.info("Skipping " + file + " because " + 
+        (accountName == null ? "account name" : "net amount") + " not found.");
       return null;
     }
 
@@ -109,10 +130,6 @@ public class Pjr2IifConverter {
     Date receiptDate = calendar.getTime();
 
     float amount = Float.parseFloat(transactionTotalNetAmount);
-
-    // We only care about the part of the id before the first "-".
-    accountId = accountId.substring(0, accountId.indexOf("-")).trim();
-    String accountName = accountIdMap.get(accountId);
 
     return new TransactionData(receiptDate, transactionId, amount, accountName);
   }
