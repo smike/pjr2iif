@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -82,7 +83,7 @@ public class Pjr2IifConverter {
     return output;
   }
 
-  private boolean getAccountName(String accountId) {
+  private String getAccountName(String accountId) {
     if (accountId == null || accountId.isEmpty()) {
       return null;
     }
