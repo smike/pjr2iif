@@ -34,7 +34,7 @@ public class Pjr2IifConverter {
 
   private static final String IIF_HEADER =
       "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tDOCNUM\tACCNT\tNAME\tAMOUNT\tPAID\n" +
-      "!SPL\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tAMOUNT\tCLEAR\n" +
+      "!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tAMOUNT\tCLEAR\n" +
       "!ENDTRNS\n";
   private static final String IIF_TRANSACTION =
       "\nTRNS\t\tINVOICE\t%tD\t%s\tAccounts Receivable\t%s\t%.2f\tN\n" +
