@@ -17,12 +17,13 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.opencsv.exceptions.CsvException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import au.com.bytecode.opencsv.CSVReader;
+import com.opencsv.CSVReader;
 
 public class Pjr2IifConverter {
   private static Logger logger = Logger.getLogger(Pjr2IifConverter.class.getName());
@@ -53,7 +54,7 @@ public class Pjr2IifConverter {
     this.accountIdMapFile = accountIdMapFile;
   }
 
-  public String convert(boolean ignoreNegativeTransactions) throws ParserConfigurationException, IOException, SAXException, ParseException {
+  public String convert(boolean ignoreNegativeTransactions) throws Exception {
     documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
     parseAccountIdMap(accountIdMapFile);
@@ -77,7 +78,7 @@ public class Pjr2IifConverter {
                        transactionData.getAmount());
       transactions.add(transactionData);
     }
-    
+
     String output = formatter.toString();
     formatter.close();
     return output;
@@ -112,7 +113,7 @@ public class Pjr2IifConverter {
     String accountName = this.getAccountName(accountId);
     if (accountName == null || transactionTotalNetAmount == null) {
       // We only care about transactions with known accounts and transaction amounts.
-      logger.info("Skipping " + file + " because " + 
+      logger.info("Skipping " + file + " because " +
         (accountName == null ? "account name" : "net amount") + " not found.");
       return null;
     }
@@ -135,7 +136,7 @@ public class Pjr2IifConverter {
     return new TransactionData(receiptDate, transactionId, amount, accountName);
   }
 
-  private void parseAccountIdMap(File file) throws IOException {
+  private void parseAccountIdMap(File file) throws IOException, CsvException {
     FileReader fileReader = new FileReader(file);
     CSVReader csvReader = new CSVReader(fileReader);
     List<String[]> rows = csvReader.readAll();
@@ -152,7 +153,7 @@ public class Pjr2IifConverter {
         accountIdMap.put(customerId.trim(), customerName);
       }
     }
-    
+
     System.out.println(accountIdMap);
   }
 

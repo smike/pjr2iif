@@ -69,7 +69,7 @@ public class MainFrame extends JFrame {
 
   private JTextField accountIdMapTextField;
   private JTextField iifFileTextField;
-  private JList pjrFilesList;
+  private JList<File> pjrFilesList;
   private JCheckBox deletePjrFilesCheckBox;
   private JCheckBox ignoreNegativeTransactionsCheckBox;
 
@@ -119,7 +119,7 @@ public class MainFrame extends JFrame {
         iifPanel.add(iifButton, gridBagConstraints);
       }
 
-      pjrFilesList = new JList();
+      pjrFilesList = new JList<File>();
       pjrFilesList.setMinimumSize(new Dimension(2000, 200));
       JButton pjrButton = new JButton("Choose the input PJR files...");
       pjrButton.addActionListener(new ActionListener() {
@@ -350,7 +350,7 @@ public class MainFrame extends JFrame {
 
   public void setPjrFiles(File[] pjrFiles) {
     this.pjrFiles.clear();
-    DefaultListModel listModel = new DefaultListModel();
+    DefaultListModel<File> listModel = new DefaultListModel<File>();
     pjrFilesList.setModel(listModel);
     for (File pjrFile : pjrFiles) {
       this.pjrFiles.add(pjrFile);
