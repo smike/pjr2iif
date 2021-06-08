@@ -25,3 +25,8 @@ jobs:
       run: chmod +x gradlew
     - name: Build with Gradle
       run: ./gradlew jar
+    - name: Archive Runnable Jar
+      uses: actions/upload-artifact@v2
+      with:
+        name: runnable-jar
+        path: build/libs/pjr2iif.jar
